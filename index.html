@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <base target="_top">
-  <title>AMS</title>
+  <title>IMS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -73,7 +73,7 @@
 <div id="accessDenied" class="container py-5 text-center hidden">
   <div class="card p-4 p-md-5 shadow-sm mx-auto mt-5 border-danger" style="max-width: 500px;">
     <h2 class="text-danger fw-bold mb-3">Access Denied</h2>
-    <p class="text-muted" id="accessDeniedMsg">You do not have permission to view the AMS. Please contact an administrator to request access.</p>
+    <p class="text-muted" id="accessDeniedMsg">You do not have permission to view the IMS. Please contact an administrator to request access.</p>
     <p id="deniedEmail" class="fw-bold mt-3 mb-4 text-secondary"></p>
     <div class="border-top pt-4">
         <p class="small text-muted mb-2">Logged in with the wrong account?</p>
@@ -88,9 +88,7 @@
   var appCurrency = "$";
   var appDefaultImg = "";
   var appIdleTimeout = 15;
-  // EXTREMELY IMPORTANT: Replace the string below with your Client's published Web App URL.
-  var GAS_URL = "https://script.google.com/macros/s/AKfycbyFVyEHinpefmdHpjYPuaLdD4eXswFCMDE1r_Qjt0j7l7uvIBit7tsjCLNphUvZsd2X/exec";
-  
+  var GAS_URL = "https://script.google.com/macros/s/AKfycbwwXijnGwm1oDwiUY_o-SEbneUI6mvEBnPjOiV1jr-gRaHD-nRHXf26sh5-pTe4RyWh/exec";
   document.addEventListener("DOMContentLoaded", function() {
     apiCall('getTemplateConfig').then(tConfig => {
         db.template = tConfig;
@@ -103,7 +101,7 @@
         document.getElementById('accessDeniedMsg').innerText = "System Configuration Error";
         document.getElementById('deniedEmail').innerText = e.message;
     });
-    const savedEmail = localStorage.getItem('ams_user_email');
+    const savedEmail = localStorage.getItem('ims_user_email');
     if (savedEmail) {
         bootApp(savedEmail);
     } else {
@@ -111,9 +109,8 @@
         document.getElementById('loginOverlay').classList.remove('hidden');
     }
   });
-
   async function apiCall(actionName, payloadData = {}) {
-    const email = localStorage.getItem('ams_user_email');
+    const email = localStorage.getItem('ims_user_email');
     if (!email && actionName !== 'getTemplateConfig') {
       document.getElementById('loginOverlay').classList.remove('hidden');
       throw new Error("Session expired. Please log in.");
@@ -121,13 +118,13 @@
     const response = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: actionName, userEmail: email || 'public', userToken: localStorage.getItem('ams_google_token'), ...payloadData })
+      body: JSON.stringify({ action: actionName, userEmail: email || 'public', userToken: localStorage.getItem('ims_google_token'), ...payloadData })
     });
     const result = await response.json();
     if (result.error) {
         if (result.error.includes("SESSION_EXPIRED")) {
-            localStorage.removeItem('ams_google_token');
-            localStorage.removeItem('ams_user_email');
+            localStorage.removeItem('ims_google_token');
+            localStorage.removeItem('ims_user_email');
             window.location.reload();
             return new Promise(() => {}); 
         }
@@ -135,22 +132,19 @@
     }
     return result.data;
   }
-
   function handleCredentialResponse(response) {
     const jwt = response.credential;
     const payload = JSON.parse(atob(jwt.split('.')[1]));
-    localStorage.setItem('ams_user_email', payload.email);
-    localStorage.setItem('ams_google_token', jwt);    
+    localStorage.setItem('ims_user_email', payload.email);
+    localStorage.setItem('ims_google_token', jwt);    
     apiCall('recordLogin').catch(e => console.warn("Login tracking failed."));
     bootApp(payload.email);
   }
-
   function signOut() {
-    localStorage.removeItem('ams_user_email');
-    localStorage.removeItem('ams_google_token');
+    localStorage.removeItem('ims_user_email');
+    localStorage.removeItem('ims_google_token');
     window.location.reload(); 
   }
-
   let idleWarningTimer;
   let countdownInterval;
   let isIdleWarningActive = false;
@@ -160,14 +154,13 @@
       if (overlay) overlay.classList.add('hidden');
       resetIdleTimer();
   }
-
   function resetIdleTimer() {
       if (isIdleWarningActive) return;
       clearTimeout(idleWarningTimer);
       clearInterval(countdownInterval);
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       if (isMobile) return;
-      if (localStorage.getItem('ams_google_token') && appIdleTimeout > 0) {
+      if (localStorage.getItem('ims_google_token') && appIdleTimeout > 0) {
           let totalMs = appIdleTimeout * 60 * 1000;
           let warningMs = Math.min(2 * 60 * 1000, totalMs / 2); 
           let idleTimeBeforeWarning = totalMs - warningMs;
@@ -176,7 +169,6 @@
           }, idleTimeBeforeWarning);
       }
   }
-
   function showIdleWarning(warningMs, idleTimeBeforeWarning) {
       isIdleWarningActive = true;
       const overlay = document.getElementById('idleWarningOverlay');
@@ -203,28 +195,23 @@
           }
       }, 1000);
   }
-
   ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evt => 
       document.addEventListener(evt, resetIdleTimer, true)
   );
-
   async function bootApp(email) {
-    console.log("[DEBUG] Booting app for user:", email);
     document.getElementById('loginOverlay').classList.add('hidden');
     document.getElementById('loadingOverlay').classList.remove('hidden');
     document.getElementById('loadingOverlay').style.opacity = '1';
-    const lastHeartbeat = localStorage.getItem('ams_last_heartbeat');
+    const lastHeartbeat = localStorage.getItem('ims_last_heartbeat');
     const today = new Date().toDateString();
     if (lastHeartbeat !== today) {
-      apiCall('heartbeat').then(() => localStorage.setItem('ams_last_heartbeat', today)).catch(e => console.warn("Telemetry ping failed."));
+      apiCall('heartbeat').then(() => localStorage.setItem('ims_last_heartbeat', today)).catch(e => console.warn("Telemetry ping failed."));
     }
     try {
-      console.log("[DEBUG] Requesting encrypted payload and initial data from Mothership...");
       const [encryptedPayload, initialData] = await Promise.all([
          apiCall('getSecureApp'),
          apiCall('getInitialData')
       ]);
-      console.log("[DEBUG] Payload received. Decrypting into DOM...");
       window._PRELOADED_DB = initialData;
       const scriptIdMatch = GAS_URL.match(/\/s\/([a-zA-Z0-9_-]+)/);
       const masterKey = scriptIdMatch ? scriptIdMatch[1] : GAS_URL;
@@ -243,7 +230,10 @@
           document.body.appendChild(newScript);
         } catch (e) {
           console.error("🔥 JAVASCRIPT SYNTAX ERROR IN MOTHERSHIP PAYLOAD 🔥");
+          console.error("The browser refused to execute the payload because of a typo.");
           console.error(e);
+          console.log("------- COPY THE CODE BELOW TO FIND THE TYPO -------");
+          console.log(script.text);
           document.getElementById('loadingOverlay').classList.add('hidden');
         }
       });
@@ -253,7 +243,6 @@
       document.getElementById('deniedEmail').innerText = err.message;
     }
   }
-
   function decryptPayloadBytes(base64Str, key) {
       const binaryStr = atob(base64Str);
       const keyBytes = new TextEncoder().encode(key);
@@ -263,9 +252,8 @@
       }
       return new TextDecoder().decode(decryptedBytes);
   }
-
   function applyTemplateVars(t) {
-      const appTitle = t.appTitle || "Asset Management System";
+      const appTitle = t.appTitle || "IMS";
       document.title = appTitle;
       const tText = document.getElementById('appTitleText');
       if (tText) tText.innerText = appTitle;
@@ -307,7 +295,31 @@
       const adminContact = t.adminContact || t._repEmail;
       if (adminContact) {
           const deniedMsg = document.getElementById('accessDeniedMsg');
-          if (deniedMsg) deniedMsg.innerText = `You do not have permission to view the AMS. Please contact ${adminContact} to request access.`;
+          if (deniedMsg) deniedMsg.innerText = `You do not have permission to view the IMS. Please contact ${adminContact} to request access.`;
+      }
+      const sortCats = (str) => {
+          let arr;
+          try {
+              arr = JSON.parse(str);
+              if (!Array.isArray(arr)) arr = String(str).split(',');
+          } catch(e) {
+              arr = String(str).split(',');
+          }
+          arr = arr.map(s => String(s).trim()).filter(s => s);
+          arr.sort((a,b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+          const otherIdx = arr.findIndex(x => x.toLowerCase() === 'other');
+          if (otherIdx > -1) arr.push(arr.splice(otherIdx, 1)[0]); 
+          return arr;
+      };
+      const mCat = document.getElementById('mCat');
+      if (mCat && t.itemCategories) {
+          mCat.innerHTML = '<option value="" disabled selected>Select Category</option>' + 
+              sortCats(t.itemCategories).map(c => `<option value="${c}">${c}</option>`).join('');
+      }
+      const mLtype = document.getElementById('mLtype');
+      if (mLtype && t.locationCategories) {
+          mLtype.innerHTML = '<option value="" disabled selected>Select Category</option>' + 
+              sortCats(t.locationCategories).map(c => `<option value="${c}">${c}</option>`).join('');
       }
       if (t.googleClientId) {
           if (window.google && window.google.accounts) {
@@ -326,22 +338,19 @@
       const lCont = document.getElementById('loginContent');
       if (lCont) lCont.classList.remove('hidden');
   }
-
   function checkGDPR() {
-    if (!localStorage.getItem('ams_gdpr_consent')) {
+    if (!localStorage.getItem('ims_gdpr_consent')) {
       setTimeout(() => { 
           const banner = document.getElementById('gdprBanner');
           if(banner) banner.classList.add('visible'); 
       }, 1000);
     }
   }
-
   function acceptGDPR() {
-    localStorage.setItem('ams_gdpr_consent', 'true');
+    localStorage.setItem('ims_gdpr_consent', 'true');
     const banner = document.getElementById('gdprBanner');
     if(banner) banner.classList.remove('visible');
   }
-
   function showLegalModal(e) {
       if (e) e.preventDefault();      
       const modalEl = document.getElementById('legalModal');
