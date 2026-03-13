@@ -68,9 +68,11 @@
   </div>
 </div>
 <div id="loadingOverlay">
-  <img id="loadLogo" src="" alt="" style="width:300px; height:300px; object-fit:contain; opacity: 0; transition: opacity 0.5s;" class="mb-3">
-  <h5 class="fw-bold text-secondary">Loading Secure Environment...</h5><br>
-  <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+  <div class="card p-4 shadow-sm text-center" style="max-width: 400px; width: 90%; background: var(--light-card); min-height: 400px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <img id="loadLogo" src="" alt="" style="width:250px; height:250px; object-fit:contain; margin: 0 auto; opacity: 0; transition: opacity 0.5s;" class="mb-4">
+    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+    <h5 class="fw-bold text-muted m-0" id="loadingText">Loading Secure Environment...</h5>
+  </div>
 </div>
 <div id="accessDenied" class="container py-5 text-center hidden">
   <div class="card p-4 p-md-5 shadow-sm mx-auto mt-5 border-danger" style="max-width: 500px;">
@@ -143,11 +145,30 @@
     bootApp(payload.email);
   }
   async function signOut() {
-    try {
-      await apiCall('invalidateSession');
-    } catch(e) {
-      console.warn("Session invalidation network drop.");
+    // Show immediate visual feedback
+    const appCont = document.getElementById('secureAppContainer');
+    const logOverlay = document.getElementById('loginOverlay');
+    const loadOverlay = document.getElementById('loadingOverlay');
+    const loadText = document.getElementById('loadingText');
+    
+    if (appCont) appCont.classList.add('hidden');
+    if (logOverlay) logOverlay.classList.add('hidden');
+    if (loadOverlay) {
+        loadOverlay.classList.remove('hidden');
+        loadOverlay.style.opacity = '1';
     }
+    if (loadText) loadText.innerText = "Signing Out...";
+    
+    // Fire invalidation but enforce a strict 1-second timeout so the user isn't kept waiting
+    try {
+      await Promise.race([
+        apiCall('invalidateSession'),
+        new Promise(resolve => setTimeout(resolve, 1000))
+      ]);
+    } catch(e) {
+      console.warn("Session invalidation timeout or network drop.");
+    }
+    
     localStorage.removeItem('ims_user_email');
     localStorage.removeItem('ims_google_token');
     window.location.reload(); 
