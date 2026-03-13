@@ -92,7 +92,7 @@
   var appCurrency = "$";
   var appDefaultImg = "";
   var appIdleTimeout = 15;
-  var GAS_URL = "https://script.google.com/macros/s/AKfycbwwXijnGwm1oDwiUY_o-SEbneUI6mvEBnPjOiV1jr-gRaHD-nRHXf26sh5-pTe4RyWh/exec";
+  var GAS_URL = "https://script.google.com/macros/s/AKfycbxRM7pblum2TVubgCvVQBRWF6FWKkHhtT-2pJuA8kCueVGo8izlXv6BCbNOQPzOH9PqCA/exec";
   document.addEventListener("DOMContentLoaded", function() {
     apiCall('getTemplateConfig').then(tConfig => {
         db.template = tConfig;
@@ -145,7 +145,6 @@
     bootApp(payload.email);
   }
   async function signOut() {
-    // Show immediate visual feedback
     const appCont = document.getElementById('secureAppContainer');
     const logOverlay = document.getElementById('loginOverlay');
     const loadOverlay = document.getElementById('loadingOverlay');
@@ -158,8 +157,6 @@
         loadOverlay.style.opacity = '1';
     }
     if (loadText) loadText.innerText = "Signing Out...";
-    
-    // Fire invalidation but enforce a strict 1-second timeout so the user isn't kept waiting
     try {
       await Promise.race([
         apiCall('invalidateSession'),
@@ -168,7 +165,6 @@
     } catch(e) {
       console.warn("Session invalidation timeout or network drop.");
     }
-    
     localStorage.removeItem('ims_user_email');
     localStorage.removeItem('ims_google_token');
     window.location.reload(); 
@@ -236,10 +232,8 @@
       apiCall('heartbeat').then(() => localStorage.setItem('ims_last_heartbeat', today)).catch(e => console.warn("Telemetry ping failed."));
     }
     try {
-      const [encryptedPayload, initialData] = await Promise.all([
-         apiCall('getSecureApp'),
-         apiCall('getInitialData')
-      ]);
+      const encryptedPayload = await apiCall('getSecureApp');
+      const initialData = await apiCall('getInitialData');
       window._PRELOADED_DB = initialData;
       const scriptIdMatch = GAS_URL.match(/\/s\/([a-zA-Z0-9_-]+)/);
       const masterKey = scriptIdMatch ? scriptIdMatch[1] : GAS_URL;
