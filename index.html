@@ -3,7 +3,7 @@
 <head>
   <base target="_top">
   <link rel="icon" href="data:,">
-  <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com https://oauth2.googleapis.com https://cdnjs.cloudflare.com; frame-src https://accounts.google.com;">
+  <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com https://oauth2.googleapis.com https://cdnjs.cloudflare.com https://api.ipify.org; frame-src https://accounts.google.com;">
   <title>IMS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
@@ -353,9 +353,10 @@
               sortCats(t.locationCategories).map(c => `<option value="${c}">${c}</option>`).join('');
       }
       if (t.googleClientId) {
-          if (window.google && window.google.accounts) {
+          if (window.google && window.google.accounts && !window._gsiInitialized) {
               window.google.accounts.id.initialize({ client_id: t.googleClientId, callback: handleCredentialResponse });
               window.google.accounts.id.renderButton(document.getElementById('googleSignInBtn'), { theme: "outline", size: "large", type: "standard", shape: "rectangular", logo_alignment: "left" });
+              window._gsiInitialized = true;
           }
       }
       const footerEl = document.getElementById('appFooterText');
